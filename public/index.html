@@ -281,7 +281,10 @@
     <audio id="buzzerSound" src="sound-buzz.wav" preload="auto"></audio>
     <script src="/socket.io/socket.io.js"></script>
     <script>
-      const socket = io();
+      const socket = io({
+  path: "/api/socketio",
+});
+
       let currentRoom = null;
       let isAdmin = false;
       const QUESTIONS = [
