@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Buzzer Game + Quiz</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        font-family: "Poppins", sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background: #fff;
+        color: #1a1a1a;
+        padding: 2rem;
+      }
+
+      h1 {
+        text-align: center;
+        font-weight: 600;
+        margin-bottom: 2rem;
+      }
+
+      #entry {
+        max-width: 500px;
+        margin: 0 auto;
+        text-align: center;
+      }
+
+      #entry input,
+      #entry button {
+        width: 100%;
+        margin-bottom: 10px;
+        padding: 0.75rem 1rem;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        font-size: 1rem;
+      }
+
+      button {
+        background: #111;
+        padding: 10px;
+        border: none;
+        border-radius: 10px;
+        color: #fff;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      button:hover {
+        background: #333;
+      }
+
+      #main {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2rem;
+        margin-top: 2rem;
+      }
+
+      #game {
+        flex: 1 1 30%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      #buzzBtn {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: #ff4d4f;
+        color: white;
+        font-size: 1.5rem;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(255, 77, 79, 0.5);
+        }
+        70% {
+          box-shadow: 0 0 0 25px rgba(255, 77, 79, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(255, 77, 79, 0);
+        }
+      }
+
+      #buzzList {
+        list-style: none;
+        padding: 0;
+        width: 100%;
+        max-width: 300px;
+      }
+
+      #buzzList li {
+        background: #f0f0f0;
+        padding: 10px;
+        margin-bottom: 5px;
+        border-left: 4px solid #111;
+        border-radius: 4px;
+        font-size: 0.95rem;
+      }
+
+      #adminControls {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 10px;
+      }
+
+      .quiz-side {
+        flex: 1 1 65%;
+        padding-left: 2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+
+      .quiz-box {
+        width: 100%;
+        max-width: 600px;
+        min-height: 200px;
+        padding: 2rem;
+        border: 2px dashed #ccc;
+        border-radius: 12px;
+        transition: all 0.4s ease;
+        animation: fadeIn 0.5s ease-in-out;
+      }
+
+      .quiz-box .question {
+        font-size: 1.8rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+      }
+
+      .quiz-box .timer {
+        color: #d9534f;
+        font-weight: bold;
+        font-size: 1.2rem;
+      }
+
+      .quiz-box .answer {
+        color: #28a745;
+        font-weight: 600;
+        font-size: 1.2rem;
+        margin-top: 1rem;
+      }
+
+      #startQuizBtn {
+        padding: 0.8rem 2rem;
+        font-size: 1rem;
+        margin-top: 1rem;
+        display: none;
+      }
+
+      #roomLabel {
+        font-size: 1.1rem;
+        text-align: center;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (max-width: 768px) {
+        #main {
+          flex-direction: column;
+        }
+
+        .quiz-side {
+          padding-left: 0;
+        }
+
+        #buzzBtn {
+          width: 100px;
+          height: 100px;
+          font-size: 1.2rem;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>🔔 Buzzer Game + Quiz</h1>
+
+    <div id="entry">
+      <input type="text" id="name" placeholder="Your Name" />
+      <button onclick="createRoom()">Create Room (Admin)</button>
+      <input type="text" id="roomId" placeholder="Enter Room ID" />
+      <button onclick="joinRoom()">Join Room</button>
+    </div>
+
+    <div id="main" style="display: none">
+      <!-- Buzzer Panel -->
+      <div id="game">
+        <h2 id="roomLabel"></h2>
+        <div id="players">Players:</div>
+        <button id="buzzBtn" onclick="buzz()">BUZZ!</button>
+
+        <div id="adminControls" style="display: none">
+          <button onclick="lockBuzzer()">🔒 Lock</button>
+          <button onclick="resetBuzzer()">🔄 Reset</button>
+        </div>
+
+        <h3>Buzz Order</h3>
+        <ul id="buzzList"></ul>
+      </div>
+
+      <!-- Quiz Panel -->
+      <div class="quiz-side" id="quizPanel" style="display: none">
+        <div class="quiz-box">
+          <div class="question" id="questionText">Waiting to start...</div>
+          <div class="timer" id="countdownText">--</div>
+          <div class="answer" id="answerText"></div>
+        </div>
+        <button id="startQuizBtn" onclick="startQuiz()">▶ Start Quiz</button>
+        <button id="nextBtn" onclick="nextQuestion()" style="display: none">
+          ➡ Next Question
+        </button>
+      </div>
+      <div>
+    </div>
+    <footer style="
+  margin-top: 4rem;
+  padding: 2rem 1rem;
+  text-align: center;
+  background: linear-gradient(to right, #f8f9fa, #e9ecef);
+  border-top: 2px solid #ccc;
+  box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.05);
+  font-family: 'Poppins', sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+">
+  <img
+    src="img/banner.png"
+    alt="Footer Banner"
+    style="
+      max-width: 600px;
+      width: 100%;
+      height: auto;
+      border-radius: 10px;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    "
+  />
+  <p style="
+    font-size: 1.1rem;
+    color: #444;
+    margin: 0;
+    text-align: center;
+  ">
+    🚀 Built with ❤️ by <strong style="color: #000;">R Harsh</strong> <br />
+    <small style="color: #888;">&copy; 2025 All Rights Reserved</small>
+  </p>
+</footer>
+
+
+    <audio id="buzzerSound" src="sound-buzz.wav" preload="auto"></audio>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io();
+      let currentRoom = null;
+      let isAdmin = false;
+      const QUESTIONS = [
+        { question: "What is 2 + 2?", answer: "4" },
+        { question: "Capital of France?", answer: "Paris" },
+        { question: "Largest planet?", answer: "Jupiter" },
+      ];
+
+      let currentIndex = 0;
+      let timer;
+      let countdown = 15;
+
+      function createRoom() {
+        const name = document.getElementById("name").value.trim();
+        if (!name) return alert("Enter your name");
+        socket.emit("create-room", name);
+      }
+
+      function joinRoom() {
+        const roomId = document
+          .getElementById("roomId")
+          .value.trim()
+          .toUpperCase();
+        const name = document.getElementById("name").value.trim();
+        if (!name || !roomId) return alert("Enter name and room ID");
+        currentRoom = roomId;
+        socket.emit("join-room", { roomId, playerName: name });
+        setupGameUI(roomId);
+      }
+
+      function setupGameUI(roomId) {
+        document.getElementById("entry").style.display = "none";
+        document.getElementById("main").style.display = "flex";
+        document.getElementById("roomLabel").innerText = `Room: ${roomId}`;
+      }
+
+      socket.on("room-created", ({ roomId }) => {
+        currentRoom = roomId;
+        isAdmin = true;
+        setupGameUI(roomId);
+        document.getElementById("adminControls").style.display = "flex";
+        document.getElementById("quizPanel").style.display = "flex";
+        document.getElementById("startQuizBtn").style.display = "inline-block";
+      });
+
+      socket.on("update-players", (players) => {
+        document.getElementById("players").innerText =
+          "Players: " + players.join(", ");
+      });
+
+      socket.on("buzzed", (buzzed) => {
+        const list = document.getElementById("buzzList");
+        list.innerHTML = "";
+        buzzed.forEach((b, i) => {
+          const li = document.createElement("li");
+          li.innerText = `${b.name} - ${b.time}s`;
+          list.appendChild(li);
+          if (i === 0) {
+            document.getElementById("buzzerSound").currentTime = 0;
+            document.getElementById("buzzerSound").play();
+          }
+        });
+      });
+
+      socket.on("buzzer-locked", () => {
+        document.getElementById("buzzBtn").innerText = "LOCKED";
+        document.getElementById("buzzBtn").disabled = true;
+      });
+
+      socket.on("buzzer-reset", () => {
+        document.getElementById("buzzList").innerHTML = "";
+        document.getElementById("buzzBtn").innerText = "BUZZ!";
+        document.getElementById("buzzBtn").disabled = false;
+      });
+
+      function buzz() {
+        socket.emit("buzz", currentRoom);
+      }
+
+      function lockBuzzer() {
+        socket.emit("lock-buzzer", currentRoom);
+        document.getElementById("buzzBtn").innerText = "LOCKED";
+        document.getElementById("buzzBtn").disabled = true;
+      }
+
+      function resetBuzzer() {
+        socket.emit("reset-buzzer", currentRoom);
+        document.getElementById("buzzBtn").innerText = "BUZZ!";
+        document.getElementById("buzzBtn").disabled = false;
+      }
+
+      function startQuiz() {
+        currentIndex = 0;
+        document.getElementById("startQuizBtn").style.display = "none";
+        document.getElementById("nextBtn").style.display = "inline-block";
+        showQuestion();
+      }
+
+      function showQuestion() {
+        if (currentIndex >= QUESTIONS.length) {
+          document.getElementById("questionText").innerText = "Quiz Finished!";
+          document.getElementById("countdownText").innerText = "";
+          document.getElementById("answerText").innerText = "";
+          document.getElementById("nextBtn").style.display = "none";
+          return;
+        }
+
+        clearInterval(timer);
+        const q = QUESTIONS[currentIndex];
+        document.getElementById("questionText").innerText = q.question;
+        document.getElementById("answerText").innerText = "";
+        countdown = 15;
+        updateCountdown();
+
+        timer = setInterval(() => {
+          countdown--;
+          updateCountdown();
+          if (countdown <= 0) {
+            clearInterval(timer);
+            document.getElementById("answerText").innerText =
+              "Answer: " + q.answer + " ⏰ Time's up!";
+          }
+        }, 1000);
+      }
+
+      function updateCountdown() {
+        document.getElementById(
+          "countdownText"
+        ).innerText = `Time left: ${countdown}s`;
+      }
+
+      function nextQuestion() {
+        currentIndex++;
+        showQuestion();
+      }
+    </script>
+  </body>
+</html>
